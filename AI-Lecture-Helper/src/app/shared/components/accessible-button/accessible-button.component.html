@@ -1,0 +1,19 @@
+<button 
+  type="button"
+  [class]="getButtonClasses()"
+  [disabled]="isDisabled || isLoading"
+  [attr.aria-label]="ariaLabel || buttonText"
+  [attr.aria-describedby]="ariaDescribedBy"
+  [attr.aria-busy]="isLoading"
+  (click)="onClick()"
+  (keydown)="onKeyDown($event)">
+  
+  <span *ngIf="isLoading" class="loading-spinner" aria-hidden="true"></span>
+  <span *ngIf="iconName && !isLoading" class="button-icon" [attr.aria-hidden]="true">
+    <!-- Icon implementation based on your icon system -->
+  </span>
+  
+  <span class="button-text">
+    {{ isLoading ? 'Loading...' : buttonText }}
+  </span>
+</button>

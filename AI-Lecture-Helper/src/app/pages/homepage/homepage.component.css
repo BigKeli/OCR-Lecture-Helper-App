@@ -1,0 +1,206 @@
+.actions-section {
+    text-align: center;
+    padding: 2rem 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+  }
+  
+  .actions-section .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #212529;
+  }
+  
+  .actions-section .help-text {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #6c757d;
+  }
+  
+  .saved-lectures-section .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #212529;
+  }
+  
+  .saved-lectures-section .loading-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+  }
+  
+  .saved-lectures-section .loading-container .spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid #dee2e6;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  .saved-lectures-section .error-container {
+    text-align: center;
+    padding: 2rem;
+    background-color: #f8d7da;
+    border-radius: 8px;
+    border: 1px solid #f5c6cb;
+  }
+  
+  .saved-lectures-section .error-container .error-message {
+    color: #721c24;
+    margin-bottom: 1rem;
+  }
+  
+  .saved-lectures-section .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+  }
+  
+  .saved-lectures-section .empty-state .empty-message {
+    font-size: 1.1rem;
+    line-height: 1.5;
+  }
+  
+  .lectures-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 0;
+  }
+  
+  .lecture-card {
+    background: #ffffff;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  
+  .lecture-card:hover,
+  .lecture-card:focus {
+    border-color: #007bff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    outline: none;
+  }
+  
+  .lecture-card:focus {
+    box-shadow: 0 0 0 3px #4A90E2;
+  }
+  
+  .lecture-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+  
+  .lecture-card .card-header .lecture-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+    flex: 1;
+    padding-right: 1rem;
+  }
+  
+  .lecture-card .card-header .delete-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6c757d;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .lecture-card .card-header .delete-button:hover,
+  .lecture-card .card-header .delete-button:focus {
+    background-color: #f8d7da;
+    color: #721c24;
+    outline: 2px solid #4A90E2;
+  }
+  
+  .lecture-card .card-content .lecture-date {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .lecture-card .card-content .lecture-description {
+    color: #212529;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    margin-bottom: 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .lecture-card .card-content .lecture-stats .slides-count {
+    color: #6c757d;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+  
+  /* Screen reader only utility */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  
+  /* Animation keyframes */
+  @keyframes spin {
+    0% { 
+      transform: rotate(0deg); 
+    }
+    100% { 
+      transform: rotate(360deg); 
+    }
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .lectures-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  
+    .lecture-card {
+      padding: 1rem;
+    }
+  }
+  
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .lecture-card {
+      border-width: 3px;
+    }
+  }
+  
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .lecture-card,
+    .lecture-card .card-header .delete-button,
+    .saved-lectures-section .loading-container .spinner {
+      transition: none;
+      animation: none;
+    }
+  }

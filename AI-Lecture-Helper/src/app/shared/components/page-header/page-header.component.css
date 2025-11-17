@@ -1,0 +1,104 @@
+.page-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    padding: 1rem 1.5rem;
+  }
+  
+  .page-header .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .page-header .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .page-header .back-button {
+    background: none;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 1.2rem;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #495057;
+    transition: all 0.2s ease;
+  }
+  
+  .page-header .back-button:hover,
+  .page-header .back-button:focus {
+    border-color: #007bff;
+    background-color: #007bff;
+    color: white;
+    outline: 3px solid #4A90E2;
+    outline-offset: 2px;
+  }
+  
+  .page-header .page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #212529;
+    margin: 0;
+  }
+  
+  .page-header .header-nav .nav-list {
+    display: flex;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .page-header .header-nav .nav-button {
+    background: none;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    padding: 0.5rem;
+    cursor: pointer;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #495057;
+    transition: all 0.2s ease;
+  }
+  
+  .page-header .header-nav .nav-button:hover,
+  .page-header .header-nav .nav-button:focus {
+    border-color: #007bff;
+    background-color: #e7f3ff;
+    outline: 3px solid #4A90E2;
+    outline-offset: 2px;
+  }
+  
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  
+  @media (max-width: 768px) {
+    .page-header {
+      padding: 0.75rem 1rem;
+    }
+  
+    .page-header .page-title {
+      font-size: 1.5rem;
+    }
+  }

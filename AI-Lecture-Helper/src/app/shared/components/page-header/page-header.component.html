@@ -1,0 +1,39 @@
+<header class="page-header" role="banner">
+    <div class="header-content">
+      <div class="header-left">
+        <button *ngIf="showBackButton"
+                type="button"
+                class="back-button"
+                aria-label="Go back"
+                (click)="goBack()">
+          <span aria-hidden="true">←</span>
+        </button>
+        
+        <h1 id="page-title" class="page-title">{{ title }}</h1>
+      </div>
+  
+      <nav class="header-nav" aria-label="Page navigation">
+        <ul class="nav-list">
+          <li *ngIf="showSettings">
+            <button type="button"
+                    class="nav-button"
+                    aria-label="Open accessibility settings"
+                    (click)="openSettings()">
+              <span aria-hidden="true">⚙️</span>
+              <span class="sr-only">Settings</span>
+            </button>
+          </li>
+          
+          <li>
+            <button type="button"
+                    class="nav-button"
+                    aria-label="Open help and instructions"
+                    (click)="openHelp()">
+              <span aria-hidden="true">❓</span>
+              <span class="sr-only">Help</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>

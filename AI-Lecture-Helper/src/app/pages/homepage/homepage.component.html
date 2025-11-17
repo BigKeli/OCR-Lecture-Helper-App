@@ -1,0 +1,98 @@
+<main role="main" aria-labelledby="page-title">
+    <app-page-header 
+      [title]="'Smart Lecture Helper'"
+      [showSettings]="true">
+    </app-page-header>
+  
+    <!-- Primary Action Section -->
+    <section class="actions-section" aria-labelledby="actions-heading">
+      <h2 id="actions-heading" class="section-title">Start Capturing</h2>
+      
+      <app-accessible-button
+        [buttonText]="'Create New Lecture'"
+        [buttonType]="'primary'"
+        [ariaDescribedBy]="'new-lecture-help'"
+        [isLarge]="true"
+        (buttonClick)="createNewLecture()">
+      </app-accessible-button>
+      
+      <p id="new-lecture-help" class="help-text sr-only">
+        Start a new lecture capture session with camera and AI analysis
+      </p>
+    </section>
+  
+    <!-- Saved Lectures Section -->
+    <section class="saved-lectures-section" aria-labelledby="saved-lectures-heading">
+      <h2 id="saved-lectures-heading" class="section-title">My Saved Lectures</h2>
+      
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="loading-container" role="status" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <span class="sr-only">Loading saved lectures...</span>
+      </div>
+  
+      <!-- Error State -->
+      <div *ngIf="error && !isLoading" 
+           class="error-container" 
+           role="alert" 
+           aria-live="assertive">
+        <p class="error-message">{{ error }}</p>
+        <app-accessible-button
+          [buttonText]="'Try Again'"
+          [buttonType]="'secondary'"
+          (buttonClick)="loadSavedLectures()">
+        </app-accessible-button>
+      </div>
+  
+      <!-- Empty State -->
+      <div *ngIf="!isLoading && !error && savedLectures.length === 0" 
+           class="empty-state">
+        <p class="empty-message">No saved lectures yet. Create your first lecture to get started!</p>
+      </div>
+  
+      <!-- Lectures Grid -->
+      <div *ngIf="!isLoading && !error && savedLectures.length > 0" 
+           class="lectures-grid"
+           role="list"
+           aria-label="Saved lecture sessions">
+        
+        <div *ngFor="let lecture of savedLectures; trackBy: trackByLectureId"
+             class="lecture-card"
+             role="listitem"
+             tabindex="0"
+             [attr.aria-label]="'Lecture: ' + lecture.title + ', created on ' + (lecture.createdAt | date:'medium')"
+             (click)="openLecture(lecture.id)"
+             (keydown)="onKeyboardNavigation($event, 'open', lecture.id)">
+          
+          <div class="card-header">
+            <h3 class="lecture-title">{{ lecture.title }}</h3>
+            <button class="delete-button"
+                    type="button"
+                    [attr.aria-label]="'Delete lecture: ' + lecture.title"
+                    (click)="deleteLecture(lecture, $event)"
+                    tabindex="0">
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          
+          <div class="card-content">
+            <p class="lecture-date">
+              <span class="sr-only">Created on: </span>
+              {{ lecture.createdAt | date:'medium' }}
+            </p>
+            
+            <p *ngIf="lecture.description" class="lecture-description">
+              {{ lecture.description }}
+            </p>
+            
+            <div class="lecture-stats">
+              <span class="slides-count">
+                <span class="sr-only">Number of slides: </span>
+                {{ lecture.slideCount || 0 }} slides
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
