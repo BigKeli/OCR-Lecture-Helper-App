@@ -1,0 +1,230 @@
+.actions-section {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  
+  .section-title {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #333;
+    font-size: 2rem;
+    font-weight: 600;
+  }
+  
+  .action-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  }
+  
+  .action-card:focus {
+    outline: none;
+    border-color: #007bff;
+  }
+  
+  .camera-card {
+    border-left: 4px solid #28a745;
+  }
+  
+  .camera-card:hover {
+    border-left-width: 8px;
+  }
+  
+  .camera-card .card-icon svg {
+    color: #28a745;
+  }
+  
+  .upload-card {
+    border-left: 4px solid #007bff;
+  }
+  
+  .upload-card:hover {
+    border-left-width: 8px;
+  }
+  
+  .upload-card .card-icon svg {
+    color: #007bff;
+  }
+  
+  .card-icon {
+    margin-bottom: 1rem;
+  }
+  
+  .card-content {
+    margin-bottom: 1.5rem;
+  }
+  
+  .action-title {
+    margin: 0 0 0.5rem;
+    color: #333;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+  
+  .action-description {
+    margin: 0 0 1rem;
+    color: #666;
+    line-height: 1.5;
+  }
+  
+  .feature-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .feature-tag {
+    background: #f8f9fa;
+    color: #495057;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  
+  .status-section {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  
+  .status-container {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    color: #333;
+    font-size: 0.9rem;
+  }
+  
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .status-icon svg {
+    color: #28a745;
+  }
+  
+  .quick-actions-section {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  
+  .quick-actions-grid {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+  }
+  
+  .loading-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    z-index: 1000;
+  }
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+  }
+  
+  .error-container {
+    background: #dc3545;
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem auto;
+    max-width: 600px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .error-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+  }
+  
+  .error-icon svg {
+    color: white;
+  }
+  
+  .error-message {
+    margin: 0;
+  }
+  
+  .help-text {
+    margin-top: 0.5rem;
+    color: #666;
+    font-size: 0.9rem;
+  }
+  
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  @media (max-width: 600px) {
+    .status-container {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .quick-actions-grid {
+      flex-direction: column;
+    }
+    
+    .action-card {
+      padding: 1.5rem;
+    }
+    
+    .action-title {
+      font-size: 1.25rem;
+    }
+  }

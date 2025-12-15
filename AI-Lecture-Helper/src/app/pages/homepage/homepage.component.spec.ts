@@ -66,13 +66,18 @@ export class HomepageComponent implements OnInit, OnDestroy {
     this.router.navigate(['/lecture/new']);
   }
 
+  // This method now navigates to the lecture page we just created
   openLecture(lectureId: string): void {
-    this.router.navigate(['/lecture', lectureId]);
+    // Navigate to the lecture page with the lecture ID
+    this.router.navigate(['/lecture', lectureId], {
+      state: {
+        lecture: this.savedLectures.find(l => l.id === lectureId)
+      }
+    });
   }
 
   deleteLecture(lecture: TemporaryLecture, event: Event): void {
     event.stopPropagation();
-    
     if (confirm(`Are you sure you want to delete "${lecture.title}"?`)) {
       // TODO: Replace with actual service call
       // this.lectureService.deleteLecture(lecture.id)
@@ -89,7 +94,6 @@ export class HomepageComponent implements OnInit, OnDestroy {
   onKeyboardNavigation(event: KeyboardEvent, action: string, lectureId?: string): void {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      
       switch (action) {
         case 'create':
           this.createNewLecture();

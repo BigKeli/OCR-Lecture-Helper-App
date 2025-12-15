@@ -1,0 +1,132 @@
+<main role="main" aria-labelledby="page-title">
+    <app-page-header 
+      [title]="'Camera Capture'"
+      [showBackButton]="true"
+      [showSettings]="true"
+      (backClick)="goBack()">
+    </app-page-header>
+  
+    <!-- Camera Section -->
+    <section class="camera-section" aria-labelledby="camera-heading">
+      <h2 id="camera-heading" class="sr-only">Live Camera Feed</h2>
+      
+      <!-- Video Preview -->
+      <div class="video-container">
+        <video #videoElement 
+               class="video-preview" 
+               autoplay 
+               muted 
+               playsinline
+               [attr.aria-label]="'Live camera feed for lecture ' + lectureId">
+        </video>
+        
+        <!-- Hidden canvas for frame capture -->
+        <canvas #canvasElement class="capture-canvas" aria-hidden="true"></canvas>
+        
+        <!-- Processing Overlay -->
+        <div class="processing-overlay" *ngIf="isProcessing">
+          <div class="spinner" aria-hidden="true"></div>
+          <span>Processing frame...</span>
+        </div>
+        
+        <!-- Error Overlay -->
+        <div class="error-overlay" *ngIf="cameraState.error" role="alert">
+          <p>{{ cameraState.error }}</p>
+          <app-accessible-button
+            [buttonText]="'Retry'"
+            [buttonType]="'primary'"
+            (buttonClick)="initializeCamera()">
+          </app-accessible-button>
+        </div>
+      </div>
+  
+      <!-- Camera Controls -->
+      <div class="camera-controls">
+        <app-accessible-button
+          [buttonText]="captureInterval ? 'Pause Capture' : 'Resume Capture'"
+          [buttonType]="'primary'"
+          [isDisabled]="!cameraState.isStreaming"
+          (buttonClick)="toggleCapture()">
+        </app-accessible-button>
+        
+        <app-accessible-button
+          [buttonText]="'Stop Camera'"
+          [buttonType]="'secondary'"
+          (buttonClick)="stopCamera()">
+        </app-accessible-button>
+      </div>
+    </section>
+  
+    <!-- OCR Results Section -->
+    <section class="results-section" aria-labelledby="results-heading">
+      <h2 id="results-heading" class="section-title">OCR Results</h2>
+      
+      <!-- Current Text -->
+      <div class="current-text" *ngIf="currentOcrText">
+        <h3>Latest Detected Text:</h3>
+        <div class="text-content" [attr.aria-label]="'Latest OCR result: ' + currentOcrText">
+          {{ currentOcrText }}
+        </div>
+      </div>
+  
+      <!-- Results History -->
+      <div class="results-history" *ngIf="ocrResults.length > 0">
+        <h3>Text History:</h3>
+        <div class="results-list" role="list">
+          <div class="result-item" 
+               *ngFor="let result of ocrResults; trackBy: trackByTimestamp"
+               role="listitem">
+            <div class="result-timestamp">
+              {{ result.timestamp | date:'HH:mm:ss' }}
+            </div>
+            <div class="result-text">
+              {{ result.text }}
+            </div>
+            <div class="result-confidence">
+              Confidence: {{ (result.confidence * 100).toFixed(1) }}%
+            </div>
+          </div>
+        </div>
+        
+        <div class="results-actions">
+          <app-accessible-button
+            [buttonText]="'Clear Results'"
+            [buttonType]="'tertiary'"
+            (buttonClick)="clearResults()">
+          </app-accessible-button>
+          
+          <app-accessible-button
+            [buttonText]="'Export Results'"
+            [buttonType]="'secondary'"
+            (buttonClick)="exportResults()">
+          </app-accessible-button>
+        </div>
+      </div>
+  
+      <!-- Empty State -->
+      <div class="empty-results" *ngIf="ocrResults.length === 0 && cameraState.isStreaming">
+        <p>No text detected yet. Point the camera at text content to begin OCR processing.</p>
+      </div>
+    </section>
+  
+    <!-- Status Bar -->
+    <section class="status-section" aria-labelledby="status-heading">
+      <h2 id="status-heading" class="sr-only">Capture Status</h2>
+      <div class="status-bar">
+        <div class="status-item">
+          <span class="status-label">Camera:</span>
+          <span class="status-value" [class]="cameraState.isStreaming ? 'active' : 'inactive'">
+            {{ cameraState.isStreaming ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Frames Processed:</span>
+          <span class="status-value">{{ cameraState.framesProcessed }}</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Results Found:</span>
+          <span class="status-value">{{ ocrResults.length }}</span>
+        </div>
+      </div>
+    </section>
+  </main>

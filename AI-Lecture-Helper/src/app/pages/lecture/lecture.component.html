@@ -1,0 +1,160 @@
+<main role="main" aria-labelledby="page-title">
+    <app-page-header 
+      [title]="lectureTitle || 'New Lecture Session'"
+      [showBackButton]="true"
+      [showSettings]="true"
+      (backClick)="goBack()">
+    </app-page-header>
+  
+    <!-- Primary Action Section -->
+    <section class="actions-section" aria-labelledby="actions-heading">
+      <h2 id="actions-heading" class="section-title">Choose Your Method</h2>
+      
+      <!-- Camera Option -->
+      <div class="action-card camera-card" 
+           tabindex="0"
+           role="button"
+           [attr.aria-describedby]="'camera-help'"
+           (click)="openCamera()"
+           (keydown)="onKeyboardNavigation($event, 'camera')">
+        
+        <div class="card-icon" aria-hidden="true">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+            <circle cx="12" cy="13" r="3"/>
+          </svg>
+        </div>
+        
+        <div class="card-content">
+          <h3 class="action-title">Open Camera</h3>
+          <p class="action-description">Start capturing lecture slides and content in real-time</p>
+          
+          <div class="feature-tags" aria-hidden="true">
+            <span class="feature-tag">Real-time OCR</span>
+            <span class="feature-tag">Auto-capture</span>
+            <span class="feature-tag">Live preview</span>
+          </div>
+        </div>
+        
+        <app-accessible-button
+          [buttonText]="'Start Camera'"
+          [buttonType]="'primary'"
+          [isLarge]="false"
+          [ariaDescribedBy]="'camera-help'"
+          (buttonClick)="openCamera()">
+        </app-accessible-button>
+      </div>
+  
+      <p id="camera-help" class="help-text sr-only">
+        Use your device camera to capture lecture slides and content. The system will automatically detect and process text using OCR technology.
+      </p>
+  
+      <!-- Upload Option -->
+      <div class="action-card upload-card" 
+           tabindex="0"
+           role="button"
+           [attr.aria-describedby]="'upload-help'"
+           (click)="addLectureContent()"
+           (keydown)="onKeyboardNavigation($event, 'upload')">
+        
+        <div class="card-icon" aria-hidden="true">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+        </div>
+        
+        <div class="card-content">
+          <h3 class="action-title">Add Lecture Materials</h3>
+          <p class="action-description">Upload existing slides, documents, or images for processing</p>
+          
+          <div class="feature-tags" aria-hidden="true">
+            <span class="feature-tag">PDF Support</span>
+            <span class="feature-tag">Image Files</span>
+            <span class="feature-tag">Batch Upload</span>
+          </div>
+        </div>
+        
+        <app-accessible-button
+          [buttonText]="'Upload Files'"
+          [buttonType]="'secondary'"
+          [isLarge]="false"
+          [ariaDescribedBy]="'upload-help'"
+          (buttonClick)="addLectureContent()">
+        </app-accessible-button>
+      </div>
+  
+      <p id="upload-help" class="help-text sr-only">
+        Upload existing lecture materials including PDF files, PowerPoint presentations, or image files. Supports multiple file formats and batch uploads.
+      </p>
+    </section>
+  
+    <!-- Status Section -->
+    <section class="status-section" aria-labelledby="status-heading" *ngIf="showStatus">
+      <h2 id="status-heading" class="section-title sr-only">Session Status</h2>
+      
+      <div class="status-container" role="status" aria-live="polite">
+        <div class="status-item">
+          <span class="status-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </span>
+          <span>Camera permissions granted</span>
+        </div>
+        
+        <div class="status-item">
+          <span class="status-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9,22 9,12 15,12 15,22"/>
+            </svg>
+          </span>
+          <span>{{ capturedSlides || 0 }} slides captured</span>
+        </div>
+      </div>
+    </section>
+  
+   
+  
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-container" role="status" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <span>{{ loadingMessage || 'Preparing lecture session...' }}</span>
+    </div>
+  
+    <!-- Error State -->
+    <div *ngIf="errorMessage && !isLoading" 
+         class="error-container" 
+         role="alert" 
+         aria-live="assertive">
+      <div class="error-content">
+        <span class="error-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+        </span>
+        <p class="error-message">{{ errorMessage }}</p>
+      </div>
+      
+      <app-accessible-button
+        [buttonText]="'Dismiss'"
+        [buttonType]="'secondary'"
+        (buttonClick)="dismissError()">
+      </app-accessible-button>
+    </div>
+  </main>
+  
+  <!-- Hidden File Input -->
+  <input #fileInput 
+         type="file" 
+         multiple 
+         accept="image/*,.pdf,.ppt,.pptx" 
+         (change)="onFileSelected($event)"
+         class="sr-only"
+         aria-label="File upload input">
