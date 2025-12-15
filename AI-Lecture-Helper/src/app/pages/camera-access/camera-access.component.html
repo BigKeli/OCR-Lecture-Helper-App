@@ -1,0 +1,152 @@
+<!-- Main container with ARIA role for accessibility -->
+<main role="main" aria-labelledby="page-title">
+  <!-- Page header component -->
+  <app-page-header
+    [title]="'Camera Access'"
+    [showSettings]="false">
+  </app-page-header>
+
+  <!-- Camera viewport section -->
+  <section class="camera-section" aria-labelledby="camera-heading">
+    <h2 id="camera-heading" class="sr-only">Camera Viewport</h2>
+
+    <!-- Error display -->
+    <div *ngIf="cameraState.error"
+         class="error-banner"
+         role="alert"
+         aria-live="assertive">
+      {{ cameraState.error }}
+    </div>
+
+    <!-- Camera preview container -->
+    <div class="camera-container">
+      <!-- Video element for live camera feed -->
+      <video
+        #videoElement
+        class="video-preview"
+        autoplay
+        playsinline
+        [attr.aria-label]="cameraState.isStreaming ? 'Live camera feed' : 'Camera inactive'">
+      </video>
+
+      <!-- Hidden canvas for frame capture -->
+      <canvas
+        #canvasElement
+        class="capture-canvas"
+        aria-hidden="true">
+      </canvas>
+
+      <!-- Camera status overlay -->
+      <div class="status-overlay" *ngIf="!cameraState.isStreaming">
+        <p class="status-text">Camera is {{ cameraState.isActive ? 'initializing' : 'off' }}</p>
+      </div>
+    </div>
+
+    <!-- Camera controls -->
+    <div class="controls-container" role="group" aria-label="Camera controls">
+      <!-- Toggle camera button -->
+      <app-accessible-button
+        [buttonText]="cameraState.isActive ? 'Stop Camera' : 'Start Camera'"
+        [buttonType]="cameraState.isActive ? 'danger' : 'primary'"
+        [ariaLabel]="cameraState.isActive ? 'Stop camera stream' : 'Start camera stream'"
+        (buttonClick)="toggleCamera()">
+      </app-accessible-button>
+
+      <!-- Capture button (only shown when camera is active) -->
+      <app-accessible-button
+        *ngIf="cameraState.isStreaming"
+        [buttonText]="'Capture Frame'"
+        [buttonType]="'success'"
+        [ariaLabel]="'Capture current camera frame'"
+        [isLarge]="true"
+        (buttonClick)="captureFrame()">
+      </app-accessible-button>
+
+      <!-- Back button -->
+      <app-accessible-button
+        [buttonText]="'Back to Home'"
+        [buttonType]="'secondary'"
+        [ariaLabel]="'Return to homepage'"
+        (buttonClick)="goToHome()">
+      </app-accessible-button>
+    </div>
+  </section>
+
+  <!-- Captured images section -->
+  <section
+    class="captures-section"
+    aria-labelledby="captures-heading"
+    *ngIf="capturedImages.length > 0">
+
+    <div class="captures-header">
+      <h2 id="captures-heading" class="section-title">
+        Captured Images ({{ capturedImages.length }})
+      </h2>
+
+      <!-- Clear all button -->
+      <app-accessible-button
+        [buttonText]="'Clear All'"
+        [buttonType]="'danger'"
+        [ariaLabel]="'Clear all captured images'"
+        (buttonClick)="clearCaptures()">
+      </app-accessible-button>
+    </div>
+
+    <!-- Image grid -->
+    <div
+      class="captures-grid"
+      role="list"
+      aria-label="Captured images gallery">
+
+      <!-- Individual captured image -->
+      <div
+        *ngFor="let image of capturedImages; let i = index; trackBy: trackByIndex"
+        class="capture-card"
+        role="listitem">
+
+        <!-- Thumbnail image -->
+        <img
+          [src]="image"
+          [alt]="'Captured image ' + (i + 1)"
+          class="capture-thumbnail"
+          loading="lazy">
+
+        <!-- Image actions -->
+        <div class="capture-actions">
+          <!-- Download button -->
+          <button
+            type="button"
+            class="action-button download-btn"
+            [attr.aria-label]="'Download image ' + (i + 1)"
+            (click)="downloadImage(image, i)">
+            <span aria-hidden="true">⬇</span>
+            <span class="sr-only">Download</span>
+          </button>
+
+          <!-- Delete button -->
+          <button
+            type="button"
+            class="action-button delete-btn"
+            [attr.aria-label]="'Delete image ' + (i + 1)"
+            (click)="deleteImage(i)">
+            <span aria-hidden="true">×</span>
+            <span class="sr-only">Delete</span>
+          </button>
+        </div>
+
+        <!-- Image metadata -->
+        <div class="capture-info">
+          <span class="capture-number">Image {{ i + 1 }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Empty state when no captures -->
+  <section
+    class="empty-state"
+    *ngIf="capturedImages.length === 0 && cameraState.isStreaming"
+    aria-live="polite">
+    <p class="empty-message">No images captured yet. Click "Capture Frame" to take a picture.</p>
+  </section>
+</main>

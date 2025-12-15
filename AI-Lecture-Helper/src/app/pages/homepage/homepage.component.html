@@ -7,17 +7,30 @@
     <!-- Primary Action Section -->
     <section class="actions-section" aria-labelledby="actions-heading">
       <h2 id="actions-heading" class="section-title">Start Capturing</h2>
-      
-      <app-accessible-button
-        [buttonText]="'Create New Lecture'"
-        [buttonType]="'primary'"
-        [ariaDescribedBy]="'new-lecture-help'"
-        [isLarge]="true"
-        (buttonClick)="createNewLecture()">
-      </app-accessible-button>
-      
+
+      <div class="button-group">
+        <app-accessible-button
+          [buttonText]="'Create New Lecture'"
+          [buttonType]="'primary'"
+          [ariaDescribedBy]="'new-lecture-help'"
+          [isLarge]="true"
+          (buttonClick)="createNewLecture()">
+        </app-accessible-button>
+
+        <app-accessible-button
+          [buttonText]="'Quick Camera Access'"
+          [buttonType]="'success'"
+          [ariaDescribedBy]="'camera-access-help'"
+          [isLarge]="true"
+          (buttonClick)="openCamera()">
+        </app-accessible-button>
+      </div>
+
       <p id="new-lecture-help" class="help-text sr-only">
         Start a new lecture capture session with camera and AI analysis
+      </p>
+      <p id="camera-access-help" class="help-text sr-only">
+        Access camera directly for quick image capture
       </p>
     </section>
   

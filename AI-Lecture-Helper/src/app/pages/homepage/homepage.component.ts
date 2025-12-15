@@ -71,6 +71,11 @@ export class HomepageComponent implements OnInit, OnDestroy {
     this.router.navigate(['/lecture/new']);
   }
 
+  // Navigate to standalone camera access page
+  openCamera(): void {
+    this.router.navigate(['/camera']);
+  }
+
   openLecture(lectureId: string): void {
     this.router.navigate(['/lecture', lectureId]);
   }
