@@ -1,0 +1,25 @@
+# Flask and web framework
+Flask==3.0.0
+Flask-CORS==4.0.0
+python-dotenv==1.0.0
+
+# Computer vision
+opencv-python==4.8.1.78
+Pillow==10.1.0
+numpy==1.26.2
+
+# Local LLM - lightweight model for slides/OCR
+transformers==4.36.2
+torch==2.2.0
+accelerate==0.25.0
+
+# API providers (optional)
+openai==1.6.1
+anthropic==0.7.8
+
+# Production server
+gunicorn==21.2.0
+
+# Network and QR code utilities
+netifaces==0.11.0
+qrcode==7.4.2
