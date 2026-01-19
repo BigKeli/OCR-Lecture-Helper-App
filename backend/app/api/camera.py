@@ -1,38 +1,12 @@
 from flask import Blueprint, Response, request, jsonify
 from app.utils.camera_handler import camera_handler
-import base64
 import logging
 
 logger = logging.getLogger(__name__)
 camera_bp = Blueprint('camera', __name__)
 
 
-@camera_bp.route('/start/laptop', methods=['POST'])
-def start_laptop_camera():
-    """Start laptop camera"""
-    try:
-        data = request.get_json() or {}
-        camera_index = data.get('camera_index', 0)
-
-        logger.info(f"Starting laptop camera {camera_index}")
-        camera_handler.start_laptop_camera(camera_index)
-        logger.info(f"Laptop camera {camera_index} started successfully")
-
-        return jsonify({
-            'success': True,
-            'message': f'Laptop camera {camera_index} started',
-            'status': camera_handler.get_status()
-        }), 200
-
-    except Exception as e:
-        logger.error(f"Failed to start laptop camera: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-@camera_bp.route('/start/ip', methods=['POST'])
+@camera_bp.route('/start', methods=['POST'])
 def start_ip_camera():
     """Start IP camera via RTSP"""
     try:
@@ -40,60 +14,24 @@ def start_ip_camera():
         rtsp_url = data.get('rtsp_url')
 
         if not rtsp_url:
-            logger.warning("IP camera start attempted without RTSP URL")
+            logger.warning("Camera start attempted without RTSP URL")
             return jsonify({
                 'success': False,
                 'error': 'rtsp_url is required'
             }), 400
 
         logger.info(f"Starting IP camera: {rtsp_url}")
-        camera_handler.start_ip_camera(rtsp_url)
+        camera_handler.start_camera(rtsp_url)
         logger.info("IP camera started successfully")
 
         return jsonify({
             'success': True,
-            'message': 'IP camera started',
+            'message': 'Camera started',
             'status': camera_handler.get_status()
         }), 200
 
     except Exception as e:
-        logger.error(f"Failed to start IP camera: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-@camera_bp.route('/phone/frame', methods=['POST'])
-def receive_phone_frame():
-    """Receive frame from phone camera via POST"""
-    try:
-        # Check if binary data or JSON with base64
-        if request.content_type == 'application/octet-stream':
-            frame_data = request.data
-        else:
-            data = request.get_json()
-            frame_base64 = data.get('frame')
-            if not frame_base64:
-                logger.warning("Phone frame received without data")
-                return jsonify({
-                    'success': False,
-                    'error': 'frame data is required'
-                }), 400
-
-            # Decode base64
-            frame_data = base64.b64decode(frame_base64)
-
-        success = camera_handler.receive_phone_frame(frame_data)
-
-        # Don't log every frame - too verbose
-        return jsonify({
-            'success': success,
-            'status': camera_handler.get_status()
-        }), 200
-
-    except Exception as e:
-        logger.error(f"Error receiving phone frame: {e}")
+        logger.error(f"Failed to start camera: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
@@ -103,11 +41,42 @@ def receive_phone_frame():
 @camera_bp.route('/stream')
 def video_stream():
     """Stream video as MJPEG"""
+    print("DEBUG: /stream endpoint hit", flush=True)
     logger.info("Video stream requested")
-    return Response(
-        camera_handler.generate_mjpeg_stream(),
+
+    gen = camera_handler.generate_mjpeg_stream()
+    print(f"DEBUG: generator created: {gen}", flush=True)
+
+    resp = Response(
+        gen,
         mimetype='multipart/x-mixed-replace; boundary=frame'
     )
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
+
+
+@camera_bp.route('/frame')
+def single_frame():
+    """Get a single JPEG frame"""
+    import cv2
+    import numpy as np
+
+    frame = camera_handler.get_current_frame()
+    if frame is None:
+        return "No frame available", 404
+
+    # Debug frame data
+    print(f"DEBUG /frame: shape={frame.shape}, dtype={frame.dtype}", flush=True)
+    print(f"DEBUG /frame: min={np.min(frame)}, max={np.max(frame)}, mean={np.mean(frame):.2f}", flush=True)
+
+    ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+    print(f"DEBUG /frame: imencode ret={ret}, buffer size={len(buffer) if ret else 'N/A'}", flush=True)
+
+    if ret:
+        return Response(buffer.tobytes(), mimetype='image/jpeg')
+    return "Encoding failed", 500
 
 
 @camera_bp.route('/status')

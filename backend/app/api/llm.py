@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from app.models.video_processor import video_processor
 from app.utils.camera_handler import camera_handler
 import time
@@ -23,12 +23,11 @@ def process_frame():
     try:
         data = request.get_json()
         task = data.get('task', 'describe')
-        provider = data.get('provider')  # None = use default
+        provider = data.get('provider')
         custom_prompt = data.get('custom_prompt')
 
         logger.info(f"Processing frame - Task: {task}, Provider: {provider or 'default'}")
 
-        # Get current frame from camera
         frame = camera_handler.get_current_frame()
 
         if frame is None:
@@ -38,7 +37,6 @@ def process_frame():
                 'error': 'No frame available. Please start camera first.'
             }), 400
 
-        # Process frame
         start_time = time.time()
         result = video_processor.process_frame(
             frame,
@@ -49,7 +47,7 @@ def process_frame():
         elapsed = time.time() - start_time
 
         if result['success']:
-            logger.info(f"Frame processed successfully in {elapsed:.2f}s using {result.get('provider', 'unknown')}")
+            logger.info(f"Frame processed in {elapsed:.2f}s using {result.get('provider', 'unknown')}")
         else:
             logger.error(f"Frame processing failed: {result.get('error', 'unknown')}")
 
@@ -63,31 +61,9 @@ def process_frame():
         }), 500
 
 
-@llm_bp.route('/process/continuous', methods=['POST'])
-def start_continuous_processing():
-    """
-    Start continuous processing of frames
-
-    Request body:
-    {
-        "task": "describe" | "read" | "summarize",
-        "provider": "local" | "openai" | "claude" (optional),
-        "interval": seconds between processing (default: 2)
-    }
-    """
-    # TODO: Implement continuous processing with threading
-    # This would process frames at regular intervals and store results
-    return jsonify({
-        'success': False,
-        'error': 'Continuous processing not yet implemented'
-    }), 501
-
-
 @llm_bp.route('/providers', methods=['GET'])
 def get_providers():
     """Get available LLM providers and their status"""
-    from flask import current_app
-
     providers = {
         'local': {
             'available': True,

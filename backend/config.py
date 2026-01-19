@@ -16,11 +16,6 @@ class Config:
     # CORS settings
     CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*')
 
-    # Camera settings
-    CAMERA_WIDTH = int(os.environ.get('CAMERA_WIDTH', 1280))
-    CAMERA_HEIGHT = int(os.environ.get('CAMERA_HEIGHT', 720))
-    CAMERA_FPS = int(os.environ.get('CAMERA_FPS', 30))
-
     # LLM settings
     DEFAULT_LLM_PROVIDER = os.environ.get('DEFAULT_LLM_PROVIDER', 'local')  # local, openai, claude
 
@@ -35,7 +30,3 @@ class Config:
     # Claude settings
     CLAUDE_API_KEY = os.environ.get('CLAUDE_API_KEY')
     CLAUDE_MODEL = os.environ.get('CLAUDE_MODEL', 'claude-3-5-sonnet-20241022')
-
-    # Processing settings
-    FRAME_PROCESS_INTERVAL = int(os.environ.get('FRAME_PROCESS_INTERVAL', 2))  # seconds between processing frames
-    MAX_FRAME_QUEUE = int(os.environ.get('MAX_FRAME_QUEUE', 100))
