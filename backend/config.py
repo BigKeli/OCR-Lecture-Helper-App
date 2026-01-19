@@ -5,7 +5,7 @@ load_dotenv()
 
 
 class Config:
-    """Base configuration"""
+    """Application configuration"""
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
     # Flask settings
@@ -16,17 +16,6 @@ class Config:
     # CORS settings
     CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*')
 
-    # LLM settings
-    DEFAULT_LLM_PROVIDER = os.environ.get('DEFAULT_LLM_PROVIDER', 'local')  # local, openai, claude
-
-    # Local LLM settings
-    LOCAL_MODEL_NAME = os.environ.get('LOCAL_MODEL_NAME', 'Salesforce/blip-image-captioning-base')
-    LOCAL_MODEL_DEVICE = os.environ.get('LOCAL_MODEL_DEVICE', 'cpu')  # cpu or cuda
-
     # OpenAI settings
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
     OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o')
-
-    # Claude settings
-    CLAUDE_API_KEY = os.environ.get('CLAUDE_API_KEY')
-    CLAUDE_MODEL = os.environ.get('CLAUDE_MODEL', 'claude-3-5-sonnet-20241022')

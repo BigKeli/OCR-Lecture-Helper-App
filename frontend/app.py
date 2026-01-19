@@ -19,9 +19,7 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:5000")
 
 class AssistiveClassroomUI:
     def __init__(self):
-        self.current_provider = "local"
         self.camera_active = False
-        self.stream_url = f"{BACKEND_URL}/api/camera/stream"
 
     def check_backend_health(self):
         """Check if backend is accessible"""
@@ -31,25 +29,6 @@ class AssistiveClassroomUI:
         except:
             return False
 
-    def get_available_providers(self):
-        """Get available LLM providers from backend"""
-        try:
-            response = requests.get(f"{BACKEND_URL}/api/llm/providers")
-            if response.status_code == 200:
-                data = response.json()
-                providers = []
-                for name, info in data["providers"].items():
-                    if info["available"]:
-                        providers.append(f"{name} ({info['model']})")
-                return (
-                    providers
-                    if providers
-                    else ["local (Salesforce/blip-image-captioning-base)"]
-                )
-        except:
-            pass
-        return ["local (Salesforce/blip-image-captioning-base)"]
-
     def start_camera(self, rtsp_url):
         """Start RTSP camera"""
         try:
@@ -58,7 +37,9 @@ class AssistiveClassroomUI:
 
             logger.info(f"Starting camera: {rtsp_url}")
             response = requests.post(
-                f"{BACKEND_URL}/api/camera/start", json={"rtsp_url": rtsp_url}
+                f"{BACKEND_URL}/api/camera/start",
+                json={"rtsp_url": rtsp_url},
+                headers={"Content-Type": "application/json"}
             )
 
             if response.status_code == 200:
@@ -93,89 +74,118 @@ class AssistiveClassroomUI:
             logger.error(f"Exception stopping camera: {e}")
             return f"Error: {str(e)}"
 
-    def get_video_frame(self):
-        """Get current video frame from backend /frame endpoint"""
+    def capture_and_display_frame(self):
+        """Capture a snapshot and display it"""
         try:
-            response = requests.get(f"{BACKEND_URL}/api/camera/frame", timeout=5)
+            # First, capture the snapshot
+            capture_response = requests.post(
+                f"{BACKEND_URL}/api/camera/capture",
+                headers={"Content-Type": "application/json"},
+                timeout=5
+            )
 
-            if response.status_code == 200:
-                img_array = np.frombuffer(response.content, dtype=np.uint8)
+            if capture_response.status_code != 200:
+                logger.error("Failed to capture snapshot")
+                return None
+
+            # Then get the captured frame
+            frame_response = requests.get(f"{BACKEND_URL}/api/camera/frame", timeout=5)
+
+            if frame_response.status_code == 200:
+                img_array = np.frombuffer(frame_response.content, dtype=np.uint8)
                 img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
                 if img is not None:
                     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                     return Image.fromarray(img)
 
         except Exception as e:
-            print(f"Error getting frame: {e}")
+            logger.error(f"Error capturing frame: {e}")
 
         return None
 
-    def process_frame(self, task, provider_str):
-        """Process current frame with LLM"""
+    def _format_result(self, result: dict) -> str:
+        """Format API result for display"""
+        if result["success"]:
+            model = result.get("model", "gpt-4o")
+            proc_time = result.get("processing_time", "N/A")
+            text = result["text"]
+            return f"**Model:** {model} | **Time:** {proc_time}s\n\n---\n\n{text}"
+        else:
+            return f"Error: {result.get('error', 'Unknown error')}"
+
+    def read_text(self) -> str:
+        """Read all text from current frame"""
+        logger.info("Action: read_text")
         try:
-            provider = provider_str.split(" (")[0]
-
-            logger.info(f"Processing frame with task='{task}', provider='{provider}'")
-
             response = requests.post(
-                f"{BACKEND_URL}/api/llm/process",
-                json={"task": task.lower(), "provider": provider},
-                timeout=30,
+                f"{BACKEND_URL}/api/llm/read",
+                headers={"Content-Type": "application/json"},
+                json={},
+                timeout=60,
             )
-
             if response.status_code == 200:
-                result = response.json()
-                if result["success"]:
-                    provider_info = result.get("provider", "unknown")
-                    model_info = result.get("model", "")
-                    text = result["text"]
-                    logger.info(f"Frame processed successfully using {provider_info}")
-                    return f"**Provider:** {provider_info} {model_info}\n\n**Result:**\n\n{text}"
-                else:
-                    error_msg = result.get("error", "Unknown error")
-                    logger.error(f"Frame processing failed: {error_msg}")
-                    return f"Error: {error_msg}"
+                return self._format_result(response.json())
             else:
-                error = response.json().get("error", "Unknown error")
-                logger.error(f"HTTP {response.status_code}: {error}")
-                return f"Error: {error}"
-
+                return f"Error: {response.json().get('error', 'Unknown error')}"
         except Exception as e:
-            logger.error(f"Exception during frame processing: {e}")
+            logger.error(f"Exception in read_text: {e}")
             return f"Error: {str(e)}"
 
-    def process_with_custom_prompt(self, custom_prompt, provider_str):
-        """Process frame with custom prompt"""
+    def describe(self) -> str:
+        """Describe the content of current frame"""
+        logger.info("Action: describe")
         try:
-            if not custom_prompt:
-                return "Error: Please enter a custom prompt"
-
-            provider = provider_str.split(" (")[0]
-
             response = requests.post(
-                f"{BACKEND_URL}/api/llm/process",
-                json={
-                    "task": "custom",
-                    "provider": provider,
-                    "custom_prompt": custom_prompt,
-                },
-                timeout=30,
+                f"{BACKEND_URL}/api/llm/describe",
+                headers={"Content-Type": "application/json"},
+                json={},
+                timeout=60,
             )
-
             if response.status_code == 200:
-                result = response.json()
-                if result["success"]:
-                    provider_info = result.get("provider", "unknown")
-                    model_info = result.get("model", "")
-                    text = result["text"]
-                    return f"**Provider:** {provider_info} {model_info}\n\n**Result:**\n\n{text}"
-                else:
-                    return f"Error: {result.get('error', 'Unknown error')}"
+                return self._format_result(response.json())
             else:
-                error = response.json().get("error", "Unknown error")
-                return f"Error: {error}"
-
+                return f"Error: {response.json().get('error', 'Unknown error')}"
         except Exception as e:
+            logger.error(f"Exception in describe: {e}")
+            return f"Error: {str(e)}"
+
+    def summarize(self) -> str:
+        """Summarize key points from current frame"""
+        logger.info("Action: summarize")
+        try:
+            response = requests.post(
+                f"{BACKEND_URL}/api/llm/summarize",
+                headers={"Content-Type": "application/json"},
+                json={},
+                timeout=60,
+            )
+            if response.status_code == 200:
+                return self._format_result(response.json())
+            else:
+                return f"Error: {response.json().get('error', 'Unknown error')}"
+        except Exception as e:
+            logger.error(f"Exception in summarize: {e}")
+            return f"Error: {str(e)}"
+
+    def custom_query(self, prompt: str) -> str:
+        """Process frame with custom prompt"""
+        if not prompt:
+            return "Error: Please enter a prompt"
+
+        logger.info("Action: custom_query")
+        try:
+            response = requests.post(
+                f"{BACKEND_URL}/api/llm/custom",
+                headers={"Content-Type": "application/json"},
+                json={"prompt": prompt},
+                timeout=60,
+            )
+            if response.status_code == 200:
+                return self._format_result(response.json())
+            else:
+                return f"Error: {response.json().get('error', 'Unknown error')}"
+        except Exception as e:
+            logger.error(f"Exception in custom_query: {e}")
             return f"Error: {str(e)}"
 
     def build_interface(self):
@@ -187,7 +197,7 @@ class AssistiveClassroomUI:
         else:
             logger.info(f"Backend is accessible at {BACKEND_URL}")
 
-        with gr.Blocks(title="Assistive Classroom") as interface:
+        with gr.Blocks(title="Assistive Classroom", theme=gr.themes.Soft()) as interface:
             gr.Markdown("# Assistive Classroom - AI Camera Assistant")
             gr.Markdown(
                 "AI-powered camera system to help students with vision/hearing difficulties in classrooms"
@@ -195,7 +205,7 @@ class AssistiveClassroomUI:
 
             with gr.Row():
                 with gr.Column(scale=2):
-                    # Video display using Gradio Image component
+                    # Video display
                     video_output = gr.Image(
                         label="Camera Feed",
                         height=480,
@@ -221,20 +231,12 @@ class AssistiveClassroomUI:
                     # LLM controls
                     gr.Markdown("### AI Processing")
 
-                    provider_dropdown = gr.Dropdown(
-                        choices=self.get_available_providers(),
-                        value=self.get_available_providers()[0],
-                        label="LLM Provider",
-                        interactive=True,
-                    )
-
                     gr.Markdown("#### Quick Actions")
-
                     with gr.Row():
-                        read_btn = gr.Button("Read Text", size="sm")
-                        describe_btn = gr.Button("Describe", size="sm")
+                        read_btn = gr.Button("Read Text", variant="primary")
+                        describe_btn = gr.Button("Describe", variant="secondary")
 
-                    summarize_btn = gr.Button("Summarize", size="sm")
+                    summarize_btn = gr.Button("Summarize", variant="secondary")
 
                     gr.Markdown("#### Custom Prompt")
                     custom_prompt = gr.Textbox(
@@ -242,7 +244,7 @@ class AssistiveClassroomUI:
                         placeholder="Ask anything about the image...",
                         lines=3,
                     )
-                    custom_btn = gr.Button("Send Custom Prompt", variant="secondary")
+                    custom_btn = gr.Button("Send Custom Prompt", variant="primary")
 
                     # Output
                     llm_output = gr.Markdown(label="AI Response")
@@ -253,38 +255,35 @@ class AssistiveClassroomUI:
                 inputs=[rtsp_url],
                 outputs=[camera_status],
             ).then(
-                fn=self.get_video_frame,
+                fn=self.capture_and_display_frame,
                 outputs=[video_output],
             )
 
             stop_btn.click(fn=self.stop_camera, outputs=[camera_status])
 
             refresh_btn.click(
-                fn=self.get_video_frame,
+                fn=self.capture_and_display_frame,
                 outputs=[video_output],
             )
 
             read_btn.click(
-                fn=lambda p: self.process_frame("read", p),
-                inputs=[provider_dropdown],
+                fn=self.read_text,
                 outputs=[llm_output],
             )
 
             describe_btn.click(
-                fn=lambda p: self.process_frame("describe", p),
-                inputs=[provider_dropdown],
+                fn=self.describe,
                 outputs=[llm_output],
             )
 
             summarize_btn.click(
-                fn=lambda p: self.process_frame("summarize", p),
-                inputs=[provider_dropdown],
+                fn=self.summarize,
                 outputs=[llm_output],
             )
 
             custom_btn.click(
-                fn=self.process_with_custom_prompt,
-                inputs=[custom_prompt, provider_dropdown],
+                fn=self.custom_query,
+                inputs=[custom_prompt],
                 outputs=[llm_output],
             )
 
@@ -313,5 +312,4 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=frontend_port,
         share=False,
-        theme=gr.themes.Soft(),
     )
