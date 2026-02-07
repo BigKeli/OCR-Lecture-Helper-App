@@ -16,8 +16,11 @@ def process_frame():
     Request body:
     {
         "task": "describe" | "read" | "summarize" | "custom",
-        "provider": "local" | "openai" | "claude" (optional),
-        "custom_prompt": "your prompt" (optional, for custom task)
+        "provider": "local" | "openai" | "claude" | "ollama" (optional),
+        "custom_prompt": "your prompt" (optional, for custom task),
+        "model": "gemma3:4b" | "gemma3:12b" | "gemma3:27b" (optional, for Ollama),
+        "num_predict": 2600 (optional, for Ollama),
+        "temperature": 0.7 (optional, for Ollama)
     }
     """
     try:
@@ -25,6 +28,11 @@ def process_frame():
         task = data.get('task', 'describe')
         provider = data.get('provider')  # None = use default
         custom_prompt = data.get('custom_prompt')
+        
+        # Ollama-specific parameters
+        model = data.get('model')
+        num_predict = data.get('num_predict')
+        temperature = data.get('temperature')
 
         logger.info(f"Processing frame - Task: {task}, Provider: {provider or 'default'}")
 
@@ -44,7 +52,10 @@ def process_frame():
             frame,
             task=task,
             provider=provider,
-            custom_prompt=custom_prompt
+            custom_prompt=custom_prompt,
+            model=model,
+            num_predict=num_predict,
+            temperature=temperature
         )
         elapsed = time.time() - start_time
 
@@ -63,30 +74,16 @@ def process_frame():
         }), 500
 
 
-@llm_bp.route('/process/continuous', methods=['POST'])
-def start_continuous_processing():
-    """
-    Start continuous processing of frames
-
-    Request body:
-    {
-        "task": "describe" | "read" | "summarize",
-        "provider": "local" | "openai" | "claude" (optional),
-        "interval": seconds between processing (default: 2)
-    }
-    """
-    # TODO: Implement continuous processing with threading
-    # This would process frames at regular intervals and store results
-    return jsonify({
-        'success': False,
-        'error': 'Continuous processing not yet implemented'
-    }), 501
-
-
 @llm_bp.route('/providers', methods=['GET'])
 def get_providers():
     """Get available LLM providers and their status"""
     from flask import current_app
+    from app.models.ollama_client import ollama_client
+    from app.api.settings import get_api_key
+
+    # Check if API keys are available (from settings or config)
+    openai_configured = bool(get_api_key('openai') or current_app.config.get('OPENAI_API_KEY'))
+    claude_configured = bool(get_api_key('claude') or current_app.config.get('CLAUDE_API_KEY'))
 
     providers = {
         'local': {
@@ -95,12 +92,22 @@ def get_providers():
             'device': current_app.config['LOCAL_MODEL_DEVICE']
         },
         'openai': {
-            'available': bool(current_app.config.get('OPENAI_API_KEY')),
+            'available': True,  # Always show, user can configure API key in UI
+            'configured': openai_configured,
             'model': current_app.config['OPENAI_MODEL']
         },
         'claude': {
-            'available': bool(current_app.config.get('CLAUDE_API_KEY')),
+            'available': True,  # Always show, user can configure API key in UI
+            'configured': claude_configured,
             'model': current_app.config['CLAUDE_MODEL']
+        },
+        'ollama': {
+            'available': True,  # Ollama is always available if configured
+            'base_url': current_app.config.get('OLLAMA_BASE_URL', 'https://ai.integriert-studieren.jku.at'),
+            'default_model': current_app.config.get('OLLAMA_DEFAULT_MODEL', 'gemma3:4b'),
+            'available_models': ollama_client.get_available_models(),
+            'num_predict': current_app.config.get('OLLAMA_NUM_PREDICT', 2600),
+            'temperature': current_app.config.get('OLLAMA_TEMPERATURE', 0.7)
         }
     }
 
@@ -108,16 +115,3 @@ def get_providers():
         'providers': providers,
         'default': current_app.config['DEFAULT_LLM_PROVIDER']
     }), 200
-
-
-@llm_bp.route('/tasks', methods=['GET'])
-def get_available_tasks():
-    """Get available processing tasks"""
-    tasks = {
-        'describe': 'Describe the content of the slide/board',
-        'read': 'Read all text on the slide/board',
-        'summarize': 'Summarize key points in bullet points',
-        'custom': 'Use a custom prompt'
-    }
-
-    return jsonify({'tasks': tasks}), 200

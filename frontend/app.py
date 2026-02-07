@@ -61,16 +61,30 @@ class AssistiveClassroomUI:
                 data = response.json()
                 providers = []
                 for name, info in data["providers"].items():
-                    if info["available"]:
-                        providers.append(f"{name} ({info['model']})")
-                return (
-                    providers
-                    if providers
-                    else ["local (Salesforce/blip-image-captioning-base)"]
-                )
-        except:
-            pass
-        return ["local (Salesforce/blip-image-captioning-base)"]
+                    # Skip local Salesforce model
+                    if name == "local":
+                        continue
+                    
+                    # Always show all providers (user can configure API keys in UI)
+                    if name == "ollama":
+                        model_name = info.get('default_model', 'gemma3:4b')
+                        # Extract version from model name (e.g., "4b" from "gemma3:4b")
+                        version = model_name.split(':')[-1].upper() if ':' in model_name else "4B"
+                        providers.append(f"JKU Ollama {version} (ollama)")
+                    elif name == "openai":
+                        model = info.get('model', 'gpt-4o')
+                        providers.append(f"OpenAI {model} (openai)")
+                    elif name == "claude":
+                        model = info.get('model', 'claude-3-5-sonnet')
+                        providers.append(f"Claude {model} (claude)")
+                    else:
+                        model = info.get('model', 'unknown')
+                        providers.append(f"{name.capitalize()} ({model})")
+                
+                return providers if providers else ["JKU Ollama 4B (ollama)"]
+        except Exception as e:
+            logger.error(f"Failed to get providers: {e}")
+        return ["JKU Ollama 4B (ollama)"]
 
     def start_laptop_camera(self, camera_index):
         """Start laptop camera"""
@@ -169,15 +183,25 @@ class AssistiveClassroomUI:
     def process_frame(self, task, provider_str):
         """Process current frame with LLM"""
         try:
-            # Extract provider name from dropdown selection
-            provider = provider_str.split(" (")[0]
+            # Extract provider name from dropdown selection (e.g., "OpenAI gpt-4o (openai)" -> "openai")
+            if "(ollama)" in provider_str.lower():
+                provider = "ollama"
+            elif "(openai)" in provider_str.lower():
+                provider = "openai"
+            elif "(claude)" in provider_str.lower():
+                provider = "claude"
+            elif " (" in provider_str and ")" in provider_str:
+                # Extract from parentheses: "Name (provider)" -> "provider"
+                provider = provider_str.split("(")[-1].split(")")[0].strip()
+            else:
+                provider = provider_str
 
             logger.info(f"Processing frame with task='{task}', provider='{provider}'")
 
             response = requests.post(
                 f"{BACKEND_URL}/api/llm/process",
                 json={"task": task.lower(), "provider": provider},
-                timeout=30,
+                timeout=120,  # Increased timeout for Ollama responses
             )
 
             if response.status_code == 200:
@@ -205,9 +229,19 @@ class AssistiveClassroomUI:
         """Process frame with custom prompt"""
         try:
             if not custom_prompt:
-                return "Error: Please enter a custom prompt"
+                return "❌ Error: Please enter a custom prompt"
 
-            provider = provider_str.split(" (")[0]
+            # Extract provider name from dropdown selection
+            if "(ollama)" in provider_str.lower():
+                provider = "ollama"
+            elif "(openai)" in provider_str.lower():
+                provider = "openai"
+            elif "(claude)" in provider_str.lower():
+                provider = "claude"
+            elif " (" in provider_str and ")" in provider_str:
+                provider = provider_str.split("(")[-1].split(")")[0].strip()
+            else:
+                provider = provider_str
 
             response = requests.post(
                 f"{BACKEND_URL}/api/llm/process",
@@ -216,7 +250,7 @@ class AssistiveClassroomUI:
                     "provider": provider,
                     "custom_prompt": custom_prompt,
                 },
-                timeout=30,
+                timeout=120,  # Increased timeout for Ollama responses
             )
 
             if response.status_code == 200:
@@ -227,13 +261,60 @@ class AssistiveClassroomUI:
                     text = result["text"]
                     return f"**Provider:** {provider_info} {model_info}\n\n**Result:**\n\n{text}"
                 else:
-                    return f"Error: {result.get('error', 'Unknown error')}"
+                    return f"❌ Error: {result.get('error', 'Unknown error')}"
             else:
                 error = response.json().get("error", "Unknown error")
-                return f"Error: {error}"
+                return f"❌ Error: {error}"
 
         except Exception as e:
-            return f"Error: {str(e)}"
+            return f"❌ Error: {str(e)}"
+
+    def process_detailed_analysis(self, provider_str):
+        """Process frame with detailed analysis (2000 words)"""
+        detailed_prompt = "Describe this image in great detail with approximately 2000 words. Include all visible text, objects, people, colors, composition, context, and any other relevant information you can observe."
+        return self.process_with_custom_prompt(detailed_prompt, provider_str)
+
+    def update_single_api_key(self, provider, api_key):
+        """Update a single API key"""
+        try:
+            payload = {}
+            if provider == "openai":
+                payload["openai_api_key"] = api_key
+            elif provider == "claude":
+                payload["claude_api_key"] = api_key
+            
+            response = requests.post(
+                f"{BACKEND_URL}/api/settings/api-keys",
+                json=payload,
+                timeout=5
+            )
+
+            if response.status_code == 200:
+                result = response.json()
+                status = result.get('status', {})
+                is_configured = status.get(provider, False)
+                
+                if is_configured:
+                    return f"✅ {provider.capitalize()} API key saved successfully!"
+                else:
+                    return f"⚠️ {provider.capitalize()} API key cleared"
+            else:
+                error = response.json().get("error", "Unknown error")
+                return f"❌ Error: {error}"
+
+        except Exception as e:
+            logger.error(f"Exception updating {provider} API key: {e}")
+            return f"❌ Error: {str(e)}"
+
+    def update_provider_visibility(self, provider_str):
+        """Update visibility of API key inputs based on selected provider"""
+        # Extract provider name
+        if "openai" in provider_str.lower() or "gpt" in provider_str.lower():
+            return gr.update(visible=True), gr.update(visible=False)
+        elif "claude" in provider_str.lower():
+            return gr.update(visible=False), gr.update(visible=True)
+        else:
+            return gr.update(visible=False), gr.update(visible=False)
 
     def build_interface(self):
         """Build Gradio interface"""
@@ -303,6 +384,8 @@ class AssistiveClassroomUI:
                 with gr.Column(scale=1):
                     # LLM controls
                     gr.Markdown("### AI Processing")
+                    
+                    gr.Markdown("💡 **Tip:** Select **Local JKU Ollama** for powerful vision analysis!")
 
                     provider_dropdown = gr.Dropdown(
                         choices=self.get_available_providers(),
@@ -311,26 +394,57 @@ class AssistiveClassroomUI:
                         interactive=True,
                     )
 
+                    # API Key inputs (conditional visibility based on provider)
+                    with gr.Group(visible=False) as openai_api_group:
+                        gr.Markdown("#### OpenAI API Key Required")
+                        openai_api_key_input = gr.Textbox(
+                            label="OpenAI API Key",
+                            placeholder="sk-...",
+                            type="password",
+                            lines=1
+                        )
+                        save_openai_btn = gr.Button("💾 Save OpenAI Key", size="sm")
+                        openai_status = gr.Markdown("")
+                    
+                    with gr.Group(visible=False) as claude_api_group:
+                        gr.Markdown("#### Claude API Key Required")
+                        claude_api_key_input = gr.Textbox(
+                            label="Claude API Key",
+                            placeholder="sk-ant-...",
+                            type="password",
+                            lines=1
+                        )
+                        save_claude_btn = gr.Button("💾 Save Claude Key", size="sm")
+                        claude_status = gr.Markdown("")
+
                     gr.Markdown("#### Quick Actions")
 
                     with gr.Row():
                         read_btn = gr.Button("📖 Read Text", size="sm")
                         describe_btn = gr.Button("🔍 Describe", size="sm")
 
-                    summarize_btn = gr.Button("📝 Summarize", size="sm")
+                    with gr.Row():
+                        summarize_btn = gr.Button("📝 Summarize", size="sm")
+                        detailed_btn = gr.Button("📝 Detailed Analysis", size="sm", variant="primary")
 
-                    # gr.Markdown("#### Custom Prompt")
-                    # custom_prompt = gr.Textbox(
-                    #     label="Custom Prompt",
-                    #     placeholder="Ask anything about the image...",
-                    #     lines=3,
-                    # )
-                    # custom_btn = gr.Button("Send Custom Prompt", variant="secondary")
+                    gr.Markdown("#### Custom Prompt")
+                    custom_prompt = gr.Textbox(
+                        label="Custom Prompt",
+                        placeholder="Ask anything about the image...",
+                        lines=3,
+                    )
+                    custom_btn = gr.Button("Send Custom Prompt", variant="secondary")
 
                     # Output
                     llm_output = gr.Markdown(label="AI Response")
 
             # Event handlers
+            # Update API key input visibility based on provider selection
+            provider_dropdown.change(
+                fn=self.update_provider_visibility,
+                inputs=[provider_dropdown],
+                outputs=[openai_api_group, claude_api_group]
+            )
             start_laptop_btn.click(
                 fn=self.start_laptop_camera,
                 inputs=[camera_index],
@@ -361,11 +475,30 @@ class AssistiveClassroomUI:
                 outputs=[llm_output],
             )
 
-            # custom_btn.click(
-            #     fn=self.process_with_custom_prompt,
-            #     inputs=[custom_prompt, provider_dropdown],
-            #     outputs=[llm_output],
-            # )
+            detailed_btn.click(
+                fn=self.process_detailed_analysis,
+                inputs=[provider_dropdown],
+                outputs=[llm_output],
+            )
+
+            custom_btn.click(
+                fn=self.process_with_custom_prompt,
+                inputs=[custom_prompt, provider_dropdown],
+                outputs=[llm_output],
+            )
+
+            # API Key save handlers
+            save_openai_btn.click(
+                fn=lambda key: self.update_single_api_key("openai", key),
+                inputs=[openai_api_key_input],
+                outputs=[openai_status],
+            )
+
+            save_claude_btn.click(
+                fn=lambda key: self.update_single_api_key("claude", key),
+                inputs=[claude_api_key_input],
+                outputs=[claude_status],
+            )
 
             # Footer
             gr.Markdown("---")

@@ -25,7 +25,7 @@ class Config:
     DEFAULT_LLM_PROVIDER = os.environ.get('DEFAULT_LLM_PROVIDER', 'local')  # local, openai, claude
 
     # Local LLM settings
-    LOCAL_MODEL_NAME = os.environ.get('LOCAL_MODEL_NAME', 'Salesforce/blip-image-captioning-base')
+    LOCAL_MODEL_NAME = os.environ.get('LOCAL_MODEL_NAME', 'JKU Ollama3.2B')
     LOCAL_MODEL_DEVICE = os.environ.get('LOCAL_MODEL_DEVICE', 'cpu')  # cpu or cuda
 
     # OpenAI settings
@@ -35,6 +35,14 @@ class Config:
     # Claude settings
     CLAUDE_API_KEY = os.environ.get('CLAUDE_API_KEY')
     CLAUDE_MODEL = os.environ.get('CLAUDE_MODEL', 'claude-3-5-sonnet-20241022')
+
+    # Ollama settings
+    OLLAMA_BASE_URL = os.environ.get('OLLAMA_BASE_URL', 'https://ai.integriert-studieren.jku.at')
+    OLLAMA_USERNAME = os.environ.get('OLLAMA_USERNAME', 'kvat')
+    OLLAMA_PASSWORD = os.environ.get('OLLAMA_PASSWORD', 'kvat123pw')
+    OLLAMA_DEFAULT_MODEL = os.environ.get('OLLAMA_DEFAULT_MODEL', 'gemma3:4b')
+    OLLAMA_NUM_PREDICT = int(os.environ.get('OLLAMA_NUM_PREDICT', 2600))
+    OLLAMA_TEMPERATURE = float(os.environ.get('OLLAMA_TEMPERATURE', 0.7))
 
     # Processing settings
     FRAME_PROCESS_INTERVAL = int(os.environ.get('FRAME_PROCESS_INTERVAL', 2))  # seconds between processing frames

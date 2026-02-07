@@ -1,5 +1,39 @@
+# Dependencies
 node_modules/
+
+# Logs
 *.log
+
+# Environment files
 .env
+.env.local
+
+# Build outputs
 dist/
 build/
+
+# Python virtual environments
+backend/venv/
+env/
+ENV/
+.venv/
+backend/venv/
+frontend/venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
