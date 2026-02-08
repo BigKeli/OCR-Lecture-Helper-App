@@ -10,7 +10,7 @@ class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
 
     # Flask settings
-    DEBUG = os.environ.get("FLASK_DEBUG", "False").lower() == "true"
+    DEBUG = os.environ.get("FLASK_DEBUG", "True").lower() == "true"
     HOST = os.environ.get("FLASK_HOST", "0.0.0.0")
     PORT = int(os.environ.get("FLASK_PORT", 5000))
 

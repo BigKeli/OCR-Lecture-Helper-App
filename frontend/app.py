@@ -369,9 +369,9 @@ class AssistiveClassroomUI:
                 inputs=[provider_dropdown],
                 outputs=[openai_api_group, claude_api_group],
             )
-            start_laptop_btn.click(
-                fn=self.start_laptop_camera,
-                inputs=[camera_index],
+            start_btn.click(
+                fn=self.start_camera,
+                inputs=[rtsp_url],
                 outputs=[camera_status],
             ).then(
                 fn=self.get_video_frame,

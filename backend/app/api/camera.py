@@ -38,45 +38,34 @@ def start_ip_camera():
         }), 500
 
 
-@camera_bp.route('/stream')
-def video_stream():
-    """Stream video as MJPEG"""
-    print("DEBUG: /stream endpoint hit", flush=True)
-    logger.info("Video stream requested")
-
-    gen = camera_handler.generate_mjpeg_stream()
-    print(f"DEBUG: generator created: {gen}", flush=True)
-
-    resp = Response(
-        gen,
-        mimetype='multipart/x-mixed-replace; boundary=frame'
-    )
-    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    resp.headers['Pragma'] = 'no-cache'
-    resp.headers['Expires'] = '0'
-    return resp
-
-
 @camera_bp.route('/frame')
-def single_frame():
-    """Get a single JPEG frame"""
+def capture_and_get_frame():
+    """Capture a fresh frame from camera and return as JPEG"""
     import cv2
-    import numpy as np
 
-    frame = camera_handler.get_current_frame()
+    logger.info("Frame capture requested")
+
+    # Capture a fresh frame on demand
+    frame = camera_handler.capture_frame()
+
     if frame is None:
-        return "No frame available", 404
-
-    # Debug frame data
-    print(f"DEBUG /frame: shape={frame.shape}, dtype={frame.dtype}", flush=True)
-    print(f"DEBUG /frame: min={np.min(frame)}, max={np.max(frame)}, mean={np.mean(frame):.2f}", flush=True)
+        logger.warning("No frame captured - camera may not be connected")
+        return jsonify({
+            'success': False,
+            'error': 'No frame available. Please start camera first.'
+        }), 404
 
     ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
-    print(f"DEBUG /frame: imencode ret={ret}, buffer size={len(buffer) if ret else 'N/A'}", flush=True)
 
     if ret:
+        logger.info(f"Frame captured and encoded - Shape: {frame.shape}")
         return Response(buffer.tobytes(), mimetype='image/jpeg')
-    return "Encoding failed", 500
+
+    logger.error("Failed to encode frame as JPEG")
+    return jsonify({
+        'success': False,
+        'error': 'Failed to encode frame'
+    }), 500
 
 
 @camera_bp.route('/stop', methods=['POST'])

@@ -50,24 +50,33 @@ class OllamaClient:
     def _frame_to_base64(self, frame):
         """
         Convert OpenCV frame to base64 string
-        
+
         Args:
             frame: OpenCV frame (numpy array)
-            
+
         Returns:
             base64 encoded JPEG string
         """
-        # Convert BGR to RGB
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        pil_img = Image.fromarray(frame_rgb)
-        
-        # Convert to JPEG bytes
-        buffered = io.BytesIO()
-        pil_img.save(buffered, format="JPEG", quality=85)
-        img_bytes = buffered.getvalue()
-        
+        # Validate frame
+        if frame is None or not isinstance(frame, np.ndarray):
+            raise ValueError("Invalid frame: must be a numpy array")
+
+        if len(frame.shape) != 3 or frame.shape[2] != 3:
+            raise ValueError(f"Invalid frame shape: {frame.shape}, expected (H, W, 3)")
+
+        # Ensure frame is uint8
+        if frame.dtype != np.uint8:
+            frame = frame.astype(np.uint8)
+
+        # Use OpenCV to encode directly to JPEG (more reliable)
+        success, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        if not success:
+            raise ValueError("Failed to encode frame as JPEG")
+
         # Encode to base64
-        img_b64 = base64.b64encode(img_bytes).decode('utf-8')
+        img_b64 = base64.b64encode(buffer.tobytes()).decode('utf-8')
+
+        logger.debug(f"Frame encoded: shape={frame.shape}, base64_len={len(img_b64)}")
         return img_b64
 
     def generate_vision(

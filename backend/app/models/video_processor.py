@@ -38,13 +38,16 @@ class VideoProcessor:
 
     def _frame_to_base64(self, frame):
         """Convert OpenCV frame to base64 string"""
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        pil_img = Image.fromarray(frame_rgb)
+        # Ensure frame is uint8
+        if frame.dtype != np.uint8:
+            frame = frame.astype(np.uint8)
 
-        buffered = io.BytesIO()
-        pil_img.save(buffered, format="JPEG", quality=85)
-        img_str = base64.b64encode(buffered.getvalue()).decode()
-        return img_str
+        # Use OpenCV to encode directly to JPEG (more reliable)
+        success, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        if not success:
+            raise ValueError("Failed to encode frame as JPEG")
+
+        return base64.b64encode(buffer.tobytes()).decode()
 
     def process_with_local_model(self, frame, task="describe"):
         """Process frame with local model (BLIP)"""
