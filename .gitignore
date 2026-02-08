@@ -1,39 +1,77 @@
-# Dependencies
-node_modules/
-
-# Logs
-*.log
-
-# Environment files
-.env
-.env.local
-
-# Build outputs
-dist/
-build/
-
-# Python virtual environments
-backend/venv/
-env/
-ENV/
-.venv/
-backend/venv/
-frontend/venv/
-
-# Python cache
+# ===============================
+# Python bytecode / cache
+# ===============================
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
 
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# ===============================
+# Virtual environments
+# ===============================
+.venv/
+venv/
+env/
+ENV/
 
-# OS files
+# ===============================
+# Environment variables / secrets
+# ===============================
+.env
+.env.*
+!.env.example
+
+# ===============================
+# Flask / runtime artifacts
+# ===============================
+instance/
+*.log
+
+# ===============================
+# ML / Torch / Transformers
+# ===============================
+.cache/
+.huggingface/
+torch_cache/
+wandb/
+
+# ===============================
+# Jupyter
+# ===============================
+.ipynb_checkpoints/
+
+# ===============================
+# OS / editor junk
+# ===============================
 .DS_Store
 Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ===============================
+# Frontend build artifacts (if added later)
+# ===============================
+node_modules/
+dist/
+build/
+
+# ===============================
+# Temporary files
+# ===============================
+*.tmp
+*.temp
+*.bak
+
+# ===============================
+# Coverage / test artifacts
+# ===============================
+.coverage
+htmlcov/
+.pytest_cache/
+
+# ===============================
+# Gradio artifacts
+# ===============================
+gradio_cached_examples/
+gradio.log

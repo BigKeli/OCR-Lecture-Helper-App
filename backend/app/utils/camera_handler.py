@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 from threading import Thread, Lock
-import queue
 import time
 import logging
 from flask import current_app
@@ -10,41 +9,21 @@ logger = logging.getLogger(__name__)
 
 
 class CameraHandler:
-    """Handles video input from laptop camera, phone, or IP camera"""
+    """Handles video input from RTSP/IP camera"""
 
     def __init__(self):
         self.camera = None
-        self.source_type = None  # 'laptop', 'phone', 'ip'
-        self.frame_queue = queue.Queue(maxsize=100)
+        self.rtsp_url = None
         self.current_frame = None
         self.is_running = False
         self.lock = Lock()
         self.thread = None
 
-    def start_laptop_camera(self, camera_index=0):
-        """Start laptop camera capture"""
-        self.stop()
-        self.camera = cv2.VideoCapture(camera_index)
-
-        if not self.camera.isOpened():
-            raise Exception(f"Failed to open camera {camera_index}")
-
-        # Set camera properties
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, current_app.config['CAMERA_WIDTH'])
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, current_app.config['CAMERA_HEIGHT'])
-        self.camera.set(cv2.CAP_PROP_FPS, current_app.config['CAMERA_FPS'])
-
-        self.source_type = 'laptop'
-        self.is_running = True
-        self.thread = Thread(target=self._capture_loop, daemon=True)
-        self.thread.start()
-        return True
-
-    def start_ip_camera(self, rtsp_url):
-        """Start IP camera capture via RTSP"""
+    def start_camera(self, rtsp_url):
+        """Start camera capture via RTSP URL"""
         self.stop()
         logger.info(f"Connecting to IP camera via RTSP: {rtsp_url}")
-        
+
         # Explicitly use FFMPEG backend for RTSP streams
         self.camera = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
 
@@ -53,33 +32,41 @@ class CameraHandler:
 
         # Set buffer size to reduce latency for RTSP streams
         self.camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        
+
         # Set RTSP transport to TCP for more reliable connection
         # (UDP is default but can be unreliable on some networks)
-        self.camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'H264'))
-        
+        self.camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"H264"))
+
         # Try to set reasonable resolution if possible
         try:
-            self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, current_app.config.get('CAMERA_WIDTH', 1280))
-            self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, current_app.config.get('CAMERA_HEIGHT', 720))
+            self.camera.set(
+                cv2.CAP_PROP_FRAME_WIDTH, current_app.config.get("CAMERA_WIDTH", 1280)
+            )
+            self.camera.set(
+                cv2.CAP_PROP_FRAME_HEIGHT, current_app.config.get("CAMERA_HEIGHT", 720)
+            )
         except:
             pass  # Some IP cameras don't allow setting resolution
 
         logger.info("IP camera connected successfully, starting capture thread")
-        self.source_type = 'ip'
+        self.source_type = "ip"
         self.is_running = True
         self.thread = Thread(target=self._capture_loop, daemon=True)
         self.thread.start()
-        
+
         # Give the thread a moment to start capturing
         time.sleep(1.0)  # Increased wait time for RTSP to buffer
-        
+
         # Check if we're actually getting frames
         if self.current_frame is None:
-            logger.warning("IP camera connected but not receiving frames yet - this might take a few more seconds")
+            logger.warning(
+                "IP camera connected but not receiving frames yet - this might take a few more seconds"
+            )
         else:
-            logger.info(f"IP camera is capturing frames successfully - Frame shape: {self.current_frame.shape}")
-        
+            logger.info(
+                f"IP camera is capturing frames successfully - Frame shape: {self.current_frame.shape}"
+            )
+
         return True
 
     def receive_phone_frame(self, frame_data):
@@ -104,7 +91,7 @@ class CameraHandler:
 
             with self.lock:
                 self.current_frame = frame.copy()
-                self.source_type = 'phone'
+                self.source_type = "phone"
 
                 # Add to queue for processing
                 if not self.frame_queue.full():
@@ -120,9 +107,9 @@ class CameraHandler:
         consecutive_failures = 0
         max_consecutive_failures = 50
         frame_count = 0
-        
+
         logger.info(f"Starting capture loop for {self.source_type} camera")
-        
+
         while self.is_running:
             if self.camera is not None and self.camera.isOpened():
                 ret, frame = self.camera.read()
@@ -130,74 +117,101 @@ class CameraHandler:
                 if ret and frame is not None:
                     frame_count += 1
                     consecutive_failures = 0
-                    
+
                     # Log first successful frame
                     if frame_count == 1:
-                        logger.info(f"First frame captured successfully - Shape: {frame.shape}")
+                        logger.info(
+                            f"First frame captured successfully - Shape: {frame.shape}"
+                        )
                     elif frame_count % 100 == 0:
-                        logger.debug(f"Captured {frame_count} frames from {self.source_type} camera")
-                    
-                    with self.lock:
-                        self.current_frame = frame.copy()
+                        logger.debug(
+                            f"Captured {frame_count} frames from {self.source_type} camera"
+                        )
 
-                    # Add to queue for processing
-                    if not self.frame_queue.full():
-                        self.frame_queue.put(frame.copy())
+                    with self.lock:
+                        # print("frame copy : ", frame.copy())
+                        self.current_frame = frame.copy()
+                        # OK
                 else:
                     consecutive_failures += 1
-                    
+
                     if consecutive_failures == 1:
-                        logger.warning(f"Failed to read frame from {self.source_type} camera")
+                        logger.warning(
+                            f"Failed to read frame from {self.source_type} camera"
+                        )
                     elif consecutive_failures >= max_consecutive_failures:
-                        logger.error(f"Too many consecutive frame read failures ({consecutive_failures}). Camera might be disconnected.")
+                        logger.error(
+                            f"Too many consecutive frame read failures ({consecutive_failures}). Camera might be disconnected."
+                        )
                         self.is_running = False
                         break
-                    
+
                     time.sleep(0.1)
             else:
                 logger.error("Camera is not opened")
                 time.sleep(0.1)
-        
-        logger.info(f"Capture loop ended for {self.source_type} camera. Total frames: {frame_count}")
+
+        logger.info(
+            f"Capture loop ended for {self.source_type} camera. Total frames: {frame_count}"
+        )
 
     def get_current_frame(self):
         """Get the most recent frame"""
+        print(f"self-lock : {self.lock}")
         with self.lock:
             if self.current_frame is not None:
+                print(
+                    f"DEBUG: get_current_frame returning frame with shape {self.current_frame.shape}",
+                    flush=True,
+                )
                 return self.current_frame.copy()
+            else:
+                print("DEBUG: get_current_frame - current_frame is None", flush=True)
         return None
 
     def generate_mjpeg_stream(self):
         """Generate MJPEG stream for web display"""
-        # Create a blank frame as fallback
         blank_frame = np.zeros((480, 640, 3), dtype=np.uint8)
-        cv2.putText(blank_frame, "Waiting for camera...", (150, 240), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-        
+        cv2.putText(
+            blank_frame,
+            "Waiting for camera...",
+            (150, 240),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (255, 255, 255),
+            2,
+        )
+
         stream_frame_count = 0
         last_log_time = time.time()
 
         while True:
+            print("DEBUG: about to call get_current_frame", flush=True)
             frame = self.get_current_frame()
 
             if frame is None:
                 frame = blank_frame
             else:
                 stream_frame_count += 1
-                
+
                 # Log streaming status every 5 seconds
                 current_time = time.time()
                 if current_time - last_log_time >= 5:
-                    logger.debug(f"MJPEG stream active - {stream_frame_count} frames sent")
+                    logger.debug(
+                        f"MJPEG stream active - {stream_frame_count} frames sent"
+                    )
                     last_log_time = current_time
 
             try:
-                # Encode frame as JPEG with quality setting
-                ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                ret, buffer = cv2.imencode(
+                    ".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85]
+                )
                 if ret:
                     frame_bytes = buffer.tobytes()
-                    yield (b'--frame\r\n'
-                           b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                    yield (
+                        b"--frame\r\n"
+                        b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
+                    )
                 else:
                     logger.error("Failed to encode frame as JPEG")
             except Exception as e:
@@ -216,24 +230,17 @@ class CameraHandler:
             self.camera.release()
             self.camera = None
 
-        # Clear queue
-        while not self.frame_queue.empty():
-            try:
-                self.frame_queue.get_nowait()
-            except queue.Empty:
-                break
-
         with self.lock:
             self.current_frame = None
 
-        self.source_type = None
+        self.rtsp_url = None
 
     def get_status(self):
         """Get camera status"""
         return {
-            'is_running': self.is_running,
-            'source_type': self.source_type,
-            'has_frame': self.current_frame is not None
+            "is_running": self.is_running,
+            "rtsp_url": self.rtsp_url,
+            "has_frame": self.current_frame is not None,
         }
 
 
