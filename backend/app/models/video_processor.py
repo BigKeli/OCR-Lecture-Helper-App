@@ -4,6 +4,7 @@ import base64
 from PIL import Image
 import io
 from flask import current_app
+from app.models.ollama_client import ollama_client
 
 
 class VideoProcessor:
@@ -94,12 +95,14 @@ class VideoProcessor:
         """Process frame with OpenAI GPT-4 Vision"""
         try:
             import openai
+            from app.api.settings import get_api_key
 
-            api_key = current_app.config.get('OPENAI_API_KEY')
+            # Try to get API key from settings first, then fall back to config
+            api_key = get_api_key('openai') or current_app.config.get('OPENAI_API_KEY')
             if not api_key:
                 return {
                     'success': False,
-                    'error': 'OpenAI API key not configured',
+                    'error': 'OpenAI API key not configured. Please set it in Settings.',
                     'provider': 'openai'
                 }
 
@@ -144,12 +147,14 @@ class VideoProcessor:
         """Process frame with Claude"""
         try:
             import anthropic
+            from app.api.settings import get_api_key
 
-            api_key = current_app.config.get('CLAUDE_API_KEY')
+            # Try to get API key from settings first, then fall back to config
+            api_key = get_api_key('claude') or current_app.config.get('CLAUDE_API_KEY')
             if not api_key:
                 return {
                     'success': False,
-                    'error': 'Claude API key not configured',
+                    'error': 'Claude API key not configured. Please set it in Settings.',
                     'provider': 'claude'
                 }
 
@@ -194,15 +199,48 @@ class VideoProcessor:
                 'provider': 'claude'
             }
 
-    def process_frame(self, frame, task="describe", provider=None, custom_prompt=None):
+    def process_with_ollama(self, frame, prompt, model=None, num_predict=None, temperature=None):
+        """Process frame with Ollama Vision API"""
+        try:
+            # Get config values or use defaults
+            if model is None:
+                model = current_app.config.get('OLLAMA_DEFAULT_MODEL', 'gemma3:4b')
+            if num_predict is None:
+                num_predict = current_app.config.get('OLLAMA_NUM_PREDICT', 2600)
+            if temperature is None:
+                temperature = current_app.config.get('OLLAMA_TEMPERATURE', 0.7)
+
+            # Call Ollama client
+            result = ollama_client.generate_vision(
+                frame=frame,
+                prompt=prompt,
+                model=model,
+                num_predict=num_predict,
+                temperature=temperature,
+                stream=False
+            )
+
+            return result
+
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e),
+                'provider': 'ollama'
+            }
+
+    def process_frame(self, frame, task="describe", provider=None, custom_prompt=None, model=None, num_predict=None, temperature=None):
         """
         Process a frame with specified provider and task
 
         Args:
             frame: OpenCV frame (numpy array)
             task: 'describe', 'read', 'summarize', or 'custom'
-            provider: 'local', 'openai', or 'claude' (uses default if None)
+            provider: 'local', 'openai', 'claude', or 'ollama' (uses default if None)
             custom_prompt: Custom prompt for API providers
+            model: Model name (for Ollama: gemma3:4b, gemma3:12b, gemma3:27b)
+            num_predict: Maximum tokens to predict (for Ollama)
+            temperature: Sampling temperature (for Ollama)
 
         Returns:
             dict with success, text, provider, and optionally error
@@ -211,7 +249,7 @@ class VideoProcessor:
             provider = current_app.config['DEFAULT_LLM_PROVIDER']
 
         # Build prompt for API providers
-        if provider in ['openai', 'claude']:
+        if provider in ['openai', 'claude', 'ollama']:
             if custom_prompt:
                 prompt = custom_prompt
             elif task == "read":
@@ -230,6 +268,8 @@ class VideoProcessor:
             return self.process_with_openai(frame, prompt)
         elif provider == 'claude':
             return self.process_with_claude(frame, prompt)
+        elif provider == 'ollama':
+            return self.process_with_ollama(frame, prompt, model=model, num_predict=num_predict, temperature=temperature)
         else:
             return {
                 'success': False,

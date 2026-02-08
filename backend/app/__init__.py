@@ -13,9 +13,11 @@ def create_app(config_object='config.Config'):
     # Register blueprints
     from app.api.camera import camera_bp
     from app.api.llm import llm_bp
+    from app.api.settings import settings_bp
 
     app.register_blueprint(camera_bp, url_prefix='/api/camera')
     app.register_blueprint(llm_bp, url_prefix='/api/llm')
+    app.register_blueprint(settings_bp, url_prefix='/api/settings')
 
     @app.route('/health')
     def health():

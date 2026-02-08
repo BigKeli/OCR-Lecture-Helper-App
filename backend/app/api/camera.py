@@ -79,12 +79,6 @@ def single_frame():
     return "Encoding failed", 500
 
 
-@camera_bp.route('/status')
-def get_status():
-    """Get camera status"""
-    return jsonify(camera_handler.get_status()), 200
-
-
 @camera_bp.route('/stop', methods=['POST'])
 def stop_camera():
     """Stop camera"""
