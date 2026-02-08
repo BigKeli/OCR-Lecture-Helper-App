@@ -86,3 +86,51 @@ def stop_camera():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@camera_bp.route('/status', methods=['GET'])
+def get_camera_status():
+    """Get current camera status"""
+    return jsonify({
+        'success': True,
+        'status': camera_handler.get_status()
+    }), 200
+
+
+@camera_bp.route('/frame/base64', methods=['GET'])
+def get_frame_base64():
+    """Get current captured frame as base64 JSON (for API clients)"""
+    import cv2
+    import base64
+
+    # Capture a fresh frame
+    frame = camera_handler.capture_frame()
+
+    if frame is None:
+        return jsonify({
+            'success': False,
+            'error': 'No frame available. Please start camera first.'
+        }), 404
+
+    # Encode as JPEG
+    ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+
+    if not ret:
+        return jsonify({
+            'success': False,
+            'error': 'Failed to encode frame'
+        }), 500
+
+    # Convert to base64
+    img_base64 = base64.b64encode(buffer.tobytes()).decode('utf-8')
+
+    return jsonify({
+        'success': True,
+        'frame': img_base64,
+        'content_type': 'image/jpeg',
+        'shape': {
+            'height': frame.shape[0],
+            'width': frame.shape[1],
+            'channels': frame.shape[2]
+        }
+    }), 200

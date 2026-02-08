@@ -132,3 +132,35 @@ def get_providers():
         ),
         200,
     )
+
+
+@llm_bp.route("/tasks", methods=["GET"])
+def get_tasks():
+    """Get available processing tasks"""
+    tasks = {
+        "read": {
+            "name": "Read Text",
+            "description": "Read all visible text on the slide or board",
+            "prompt": "Read all the text visible on this slide or board clearly and accurately. Include all text content."
+        },
+        "describe": {
+            "name": "Describe",
+            "description": "Describe the main content and diagrams",
+            "prompt": "Describe what you see on this slide or board, focusing on the main content and any diagrams."
+        },
+        "summarize": {
+            "name": "Summarize",
+            "description": "Summarize key points in 2-3 bullet points",
+            "prompt": "Summarize the key points shown on this slide or board in 2-3 concise bullet points."
+        },
+        "custom": {
+            "name": "Custom",
+            "description": "Use your own prompt",
+            "prompt": None
+        }
+    }
+
+    return jsonify({
+        "success": True,
+        "tasks": tasks
+    }), 200
