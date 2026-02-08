@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistive Classroom - AI Camera Assistant</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <!-- Screen Reader Announcements (Live Region) -->
+    <div id="announcements" role="status" aria-live="polite" aria-atomic="true" class="sr-only">
+        <!-- Dynamic announcements will be inserted here -->
+    </div>
+
+    <!-- Skip Navigation Link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Header -->
+    <header role="banner" aria-label="Site header">
+        <h1>Assistive Classroom</h1>
+        <p>AI-powered camera system to help students with vision/hearing difficulties in classrooms</p>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content" role="main" aria-label="Main content">
+
+        <!-- Camera Section -->
+        <section id="camera-section" aria-labelledby="camera-heading">
+            <h2 id="camera-heading">Camera Feed</h2>
+
+            <!-- Camera Display -->
+            <div id="camera-display" role="img" aria-label="Camera feed display" tabindex="0">
+                <img id="camera-frame" src="" alt="Captured camera frame - No image captured yet">
+            </div>
+
+            <!-- Camera Status -->
+            <div id="camera-status" role="status" aria-live="polite">
+                <span id="status-text">No camera active</span>
+            </div>
+
+            <!-- Camera Controls -->
+            <fieldset id="camera-controls" aria-label="Camera controls">
+                <legend>Camera Settings</legend>
+
+                <div class="form-group">
+                    <label for="rtsp-url">RTSP URL</label>
+                    <input type="text" id="rtsp-url" name="rtsp_url"
+                        placeholder="rtsp://username:password@ip:port/stream" aria-describedby="rtsp-help">
+                    <small id="rtsp-help">Enter the RTSP stream URL from your IP camera</small>
+                </div>
+
+                <div class="button-group" role="group" aria-label="Camera action buttons">
+                    <button type="button" id="btn-start-camera" aria-describedby="start-help">
+                        Start Camera
+                    </button>
+                    <button type="button" id="btn-stop-camera" aria-describedby="stop-help">
+                        Stop Camera
+                    </button>
+                    <button type="button" id="btn-refresh-frame" aria-describedby="refresh-help">
+                        Refresh Frame
+                    </button>
+                </div>
+
+                <!-- Hidden help text for screen readers -->
+                <span id="start-help" hidden>Connect to the RTSP camera stream</span>
+                <span id="stop-help" hidden>Disconnect from the camera</span>
+                <span id="refresh-help" hidden>Capture a new frame from the camera</span>
+            </fieldset>
+        </section>
+
+        <!-- AI Processing Section -->
+        <section id="ai-section" aria-labelledby="ai-heading">
+            <h2 id="ai-heading">AI Processing</h2>
+
+            <!-- Provider Selection -->
+            <div class="form-group">
+                <label for="provider-select">LLM Provider</label>
+                <select id="provider-select" aria-describedby="provider-help">
+                    <option value="ollama">JKU Ollama (Default)</option>
+                    <option value="openai">OpenAI GPT-4</option>
+                    <option value="claude">Claude</option>
+                </select>
+                <small id="provider-help">Select the AI provider for image analysis</small>
+            </div>
+
+            <!-- API Key Configuration (conditionally shown) -->
+            <fieldset id="api-key-section" aria-label="API Key configuration" hidden>
+                <legend>API Key Required</legend>
+
+                <div id="openai-key-group" class="form-group" hidden>
+                    <label for="openai-api-key">OpenAI API Key</label>
+                    <input type="password" id="openai-api-key" placeholder="sk-..." aria-describedby="openai-key-help">
+                    <small id="openai-key-help">Enter your OpenAI API key</small>
+                    <button type="button" id="btn-save-openai-key">Save OpenAI Key</button>
+                </div>
+
+                <div id="claude-key-group" class="form-group" hidden>
+                    <label for="claude-api-key">Claude API Key</label>
+                    <input type="password" id="claude-api-key" placeholder="sk-ant-..."
+                        aria-describedby="claude-key-help">
+                    <small id="claude-key-help">Enter your Anthropic Claude API key</small>
+                    <button type="button" id="btn-save-claude-key">Save Claude Key</button>
+                </div>
+            </fieldset>
+
+            <!-- Quick Actions -->
+            <fieldset id="quick-actions" aria-label="Quick analysis actions">
+                <legend>Quick Actions</legend>
+
+                <div class="button-group" role="group" aria-label="Analysis action buttons">
+                    <button type="button" id="btn-read-text" aria-describedby="read-help">
+                        Read Text
+                    </button>
+                    <button type="button" id="btn-describe" aria-describedby="describe-help">
+                        Describe
+                    </button>
+                    <button type="button" id="btn-summarize" aria-describedby="summarize-help">
+                        Summarize
+                    </button>
+                    <button type="button" id="btn-detailed" aria-describedby="detailed-help">
+                        Detailed Analysis
+                    </button>
+                </div>
+
+                <!-- Hidden help text for screen readers -->
+                <span id="read-help" hidden>Extract and read all visible text from the image</span>
+                <span id="describe-help" hidden>Get a description of the image content</span>
+                <span id="summarize-help" hidden>Get a brief summary of key points</span>
+                <span id="detailed-help" hidden>Get a comprehensive detailed analysis</span>
+            </fieldset>
+
+            <!-- Custom Prompt -->
+            <fieldset id="custom-prompt-section" aria-label="Custom prompt">
+                <legend>Custom Prompt</legend>
+
+                <div class="form-group">
+                    <label for="custom-prompt">Ask anything about the image</label>
+                    <textarea id="custom-prompt" rows="3" placeholder="Enter your custom prompt..."
+                        aria-describedby="custom-prompt-help"></textarea>
+                    <small id="custom-prompt-help">Type a custom question or instruction for the AI</small>
+                </div>
+
+                <button type="button" id="btn-send-custom" aria-describedby="custom-send-help">
+                    Send Custom Prompt
+                </button>
+                <span id="custom-send-help" hidden>Send your custom prompt to the AI</span>
+            </fieldset>
+        </section>
+
+        <!-- Results Section -->
+        <section id="results-section" aria-labelledby="results-heading">
+            <h2 id="results-heading">AI Response</h2>
+
+            <!-- Loading Indicator -->
+            <div id="loading-indicator" role="status" aria-live="polite" hidden>
+                <span>Processing... Please wait.</span>
+            </div>
+
+            <!-- Results Display -->
+            <div id="results-display" role="region" aria-labelledby="results-heading" aria-live="polite" tabindex="0">
+                <p id="results-placeholder">No results yet. Capture a frame and select an action.</p>
+                <div id="results-content" hidden>
+                    <p id="results-provider"></p>
+                    <div id="results-text"></div>
+                </div>
+            </div>
+
+            <!-- Save to Notes -->
+            <div id="save-note-section" hidden>
+                <button type="button" id="btn-save-note" aria-describedby="save-note-help">
+                    Save to Notes
+                </button>
+                <span id="save-note-help" hidden>Save the current result as a note</span>
+            </div>
+        </section>
+
+        <!-- Notes Section -->
+        <section id="notes-section" aria-labelledby="notes-heading">
+            <h2 id="notes-heading">Saved Notes</h2>
+
+            <!-- Notes Count -->
+            <p id="notes-count" role="status" aria-live="polite">
+                <span id="notes-count-text">0 notes saved</span>
+            </p>
+
+            <!-- Notes List -->
+            <div id="notes-list" role="list" aria-label="List of saved notes">
+                <p id="notes-empty">No notes saved yet.</p>
+                <!-- Notes will be dynamically inserted here -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Help Dialog -->
+    <dialog id="help-dialog" aria-labelledby="help-dialog-title" aria-describedby="help-dialog-desc">
+        <header>
+            <h2 id="help-dialog-title">Help - Keyboard Shortcuts</h2>
+        </header>
+
+        <div id="help-dialog-desc">
+            <h3>Keyboard Navigation</h3>
+            <dl>
+                <dt><kbd>Tab</kbd></dt>
+                <dd>Move to next interactive element</dd>
+
+                <dt><kbd>Shift</kbd> + <kbd>Tab</kbd></dt>
+                <dd>Move to previous interactive element</dd>
+
+                <dt><kbd>Enter</kbd> or <kbd>Space</kbd></dt>
+                <dd>Activate buttons</dd>
+
+                <dt><kbd>Escape</kbd></dt>
+                <dd>Close dialogs</dd>
+
+                <dt><kbd>?</kbd></dt>
+                <dd>Open this help dialog</dd>
+            </dl>
+
+            <h3>LLM Actions</h3>
+            <dl>
+                <dt><kbd>Shift</kbd> + <kbd>R</kbd></dt>
+                <dd>Read text from image</dd>
+
+                <dt><kbd>Shift</kbd> + <kbd>D</kbd></dt>
+                <dd>Describe image</dd>
+
+                <dt><kbd>Shift</kbd> + <kbd>S</kbd></dt>
+                <dd>Summarize content</dd>
+
+                <dt><kbd>Shift</kbd> + <kbd>A</kbd></dt>
+                <dd>Detailed analysis</dd>
+            </dl>
+
+            <h3>Camera Controls</h3>
+            <dl>
+                <dt><kbd>Shift</kbd> + <kbd>C</kbd></dt>
+                <dd>Capture new frame</dd>
+
+                <dt><kbd>Shift</kbd> + <kbd>X</kbd></dt>
+                <dd>Start camera</dd>
+
+                <dt><kbd>Shift</kbd> + <kbd>Z</kbd></dt>
+                <dd>Stop camera</dd>
+            </dl>
+
+            <h3>Notes</h3>
+            <dl>
+                <dt><kbd>Shift</kbd> + <kbd>N</kbd></dt>
+                <dd>Save current result as note</dd>
+
+                <dt><kbd>Shift</kbd> + <kbd>L</kbd></dt>
+                <dd>Refresh notes list</dd>
+            </dl>
+        </div>
+
+        <footer>
+            <button type="button" id="btn-close-help" autofocus>Close</button>
+        </footer>
+    </dialog>
+
+    <!-- Help Button (Fixed Position) -->
+    <button type="button" id="btn-help" aria-label="Open help dialog" aria-haspopup="dialog">
+        Help (?)
+    </button>
+
+    <!-- Footer -->
+    <footer role="contentinfo" aria-label="Site footer">
+        <p>Assistive Classroom - AI Camera Assistant</p>
+        <p>For assistance, press <kbd>?</kbd> or click the Help button.</p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>

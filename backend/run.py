@@ -32,7 +32,8 @@ if __name__ == '__main__':
     debug = app.config['DEBUG']
 
     print(f"\n\033[1m\033[96mAssistive Classroom - Backend API\033[0m")
-    print(f"\033[92mRunning on:\033[0m http://{host}:{port}")
+    print(f"\033[92mFrontend:\033[0m http://{host}:{port}/")
+    print(f"\033[92mAPI Base:\033[0m http://{host}:{port}/api")
     print(f"\033[94mHealth check:\033[0m http://localhost:{port}/health\n")
 
     logger.info(f"Starting Flask app on {host}:{port}")
